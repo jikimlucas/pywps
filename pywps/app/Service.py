@@ -17,6 +17,7 @@ from pywps.dblog import log_request, update_response
 from collections import deque
 import shutil
 import os
+import sys
 import uuid
 
 LOGGER = logging.getLogger(__name__)
@@ -44,6 +45,9 @@ class Service(object):
             LOGGER.addHandler(fh)
         else:  # NullHandler
             LOGGER.addHandler(logging.NullHandler())
+
+        self._set_grass()
+
 
     def get_capabilities(self):
         process_elements = [p.capabilities_xml()
@@ -494,6 +498,20 @@ class Service(object):
             raise MissingParameterValue(locator=source.identifier)
 
         return outinputs
+
+    def _set_grass(self):
+        """Set environment variables needed for GRASS GIS support
+        """
+
+        gisbase = config.get_config_value('server', 'gisbase')
+        if gisbase:
+            os.environ['GISBASE'] = gisbase
+            os.environ['LD_LIBRARY_PATH'] = '{}:{}'.format(
+                os.environ.get('LD_LIBRARY_PATH'),
+                os.path.join(gisbase, 'lib'))
+
+
+
 
     def create_bbox_inputs(self, source, inputs):
         """ Takes the http_request and parses the input to objects
